@@ -1,6 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='tgbot',
-    version='0.1'
+    name='tgbotapp',
+    version='0.1',
+    packages=['tgbotapp']
 )
