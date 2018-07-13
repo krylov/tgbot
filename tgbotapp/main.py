@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from configparser import ConfigParser
+from importlib import import_module
 from os import environ
 from os.path import join
 from telebot import TeleBot
@@ -8,7 +9,7 @@ from telebot import TeleBot
 BOT_CONFIGS_ENV = "TG_CONFIG_PATH"
 
 
-def create_bot():
+def create_tools():
     path = environ.get(BOT_CONFIGS_ENV)
     if not path:
         raise Exception("The '{}' environment variable should "
@@ -26,9 +27,11 @@ def create_bot():
         token = config.get('main', 'token')
     except Exception as exc:
         raise exc
-    return TeleBot(token)
+    calchandler = import_module('calchandler')
 
-bot = create_bot()
+    return TeleBot(token), calchandler.CalcHandler()
+
+bot, handler = create_tools()
 
 
 @bot.message_handler(commands=['trn'])
@@ -37,14 +40,8 @@ def handle_start_help(message):
 
 
 @bot.message_handler(content_types=["text"])
-def repeat_all_messages(message):
-    try:
-        n = int(message.text)
-        response = str(n*n)
-    except:
-        response = "This is not number"
-
-    bot.send_message(message.chat.id, response)
+def make_response(message):
+    bot.send_message(message.chat.id, handler.make_response(message))
 
 
 if __name__ == '__main__':
