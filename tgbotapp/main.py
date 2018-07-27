@@ -27,9 +27,9 @@ def create_tools():
         token = config.get('main', 'token')
     except Exception as exc:
         raise exc
-    calchandler = import_module('calchandler')
+    msghandler = import_module('betpammhandler')
 
-    return TeleBot(token), calchandler.calchandler.CalcHandler()
+    return TeleBot(token), msghandler.betpammhandler.BetPammHandler()
 
 bot, handler = create_tools()
 
