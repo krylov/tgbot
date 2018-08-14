@@ -3,7 +3,9 @@ from configparser import ConfigParser
 from importlib import import_module
 from os import environ
 from os.path import join
+from requests.exceptions import ConnectionError, ReadTimeout
 from telebot import TeleBot
+from time import sleep
 
 
 BOT_CONFIGS_ENV = "TG_CONFIG_PATH"
@@ -31,18 +33,22 @@ def create_tools():
 
     return TeleBot(token), msghandler.betpammhandler.BetPammHandler()
 
-bot, handler = create_tools()
-
-
-@bot.message_handler(commands=['trn'])
-def handle_start_help(message):
-    pass
-
-
-@bot.message_handler(content_types=["text"])
-def make_response(message):
-    bot.send_message(message.chat.id, handler.make_response(message))
-
 
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    while True:
+        try:
+            bot, handler = create_tools()
+
+            @bot.message_handler(commands=['trn'])
+            def handle_start_help(message):
+                pass
+
+            @bot.message_handler(content_types=["text"])
+            def make_response(message):
+                bot.send_message(message.chat.id, handler.make_response(message)
+
+            bot.polling(none_stop=True)
+            break
+        except (ConnectionError, ReadTimeout) as exc:
+            print("Error: {}".format(exc))
+            sleep(10)
