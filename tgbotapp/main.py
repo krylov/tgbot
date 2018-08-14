@@ -11,6 +11,23 @@ from time import sleep
 BOT_CONFIGS_ENV = "TG_CONFIG_PATH"
 
 
+class CustomTeleBot:
+    def __init__(self, token):
+        self._bot = TeleBot(token)
+
+        @self._bot.message_handler(commands=['trn'])
+        def handle_start_help(message):
+            pass
+
+        @self._bot.message_handler(content_types=["text"])
+        def make_response(message):
+            self._bot.send_message(message.chat.id,
+                                   handler.make_response(message))
+
+    def run(self):
+        self._bot.polling(none_stop=True)
+
+
 def create_tools():
     path = environ.get(BOT_CONFIGS_ENV)
     if not path:
@@ -31,23 +48,14 @@ def create_tools():
         raise exc
     msghandler = import_module('betpammhandler')
 
-    return TeleBot(token), msghandler.betpammhandler.BetPammHandler()
+    return CustomTeleBot(token), msghandler.betpammhandler.BetPammHandler()
 
 
 if __name__ == '__main__':
     while True:
         try:
             bot, handler = create_tools()
-
-            @bot.message_handler(commands=['trn'])
-            def handle_start_help(message):
-                pass
-
-            @bot.message_handler(content_types=["text"])
-            def make_response(message):
-                bot.send_message(message.chat.id, handler.make_response(message)
-
-            bot.polling(none_stop=True)
+            bot.run()
             break
         except (ConnectionError, ReadTimeout) as exc:
             print("Error: {}".format(exc))
