@@ -15,14 +15,15 @@ class CustomTeleBot:
     def __init__(self, token):
         self._bot = TeleBot(token)
 
-        @self._bot.message_handler(commands=['trn'])
-        def handle_start_help(message):
-            pass
+        @self._bot.message_handler(commands=['start_send', 'stop_send'])
+        def execute_command(message):
+            handler.execute_command(self._bot, message)
 
-        @self._bot.message_handler(content_types=["text"])
+        @self._bot.message_handler(content_types=['text'])
         def make_response(message):
             self._bot.send_message(message.chat.id,
-                                   handler.make_response(message))
+                                   handler.make_response(message),
+                                   parse_mode="html")
 
     def run(self):
         self._bot.polling(none_stop=True)
