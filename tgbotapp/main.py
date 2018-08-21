@@ -44,11 +44,12 @@ def create_tools():
     try:
         config.read(full_bot_path)
         token = config.get('main', 'token')
+        handler_name = config.get('main', 'handler')
     except Exception as exc:
         raise exc
-    msghandler = import_module('betpammhandler')
+    msghandler = import_module(handler_name)
 
-    return CustomTeleBot(token), msghandler.betpammhandler.BetPammHandler()
+    return CustomTeleBot(token), msghandler.msghandler.MessageHandler()
 
 
 if __name__ == '__main__':
