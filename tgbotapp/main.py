@@ -46,11 +46,14 @@ def create_tools():
         config.read(full_bot_path)
         token = config.get('main', 'token')
         handler_name = config.get('main', 'handler')
+        handler_settings = config.items('handler')
+        handler_settings = dict(handler_settings)
     except Exception as exc:
         raise exc
     msghandler = import_module(handler_name)
 
-    return CustomTeleBot(token), msghandler.msghandler.MessageHandler()
+    return (CustomTeleBot(token),
+            msghandler.msghandler.MessageHandler(**handler_settings))
 
 
 if __name__ == '__main__':
