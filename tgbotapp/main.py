@@ -1,14 +1,10 @@
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from importlib import import_module
-from os import environ
 from os.path import join
 from requests.exceptions import ConnectionError, ReadTimeout
 from telebot import TeleBot
 from time import sleep
-
-
-BOT_CONFIGS_ENV = "TG_CONFIG_PATH"
 
 
 class CustomTeleBot:
@@ -30,17 +26,14 @@ class CustomTeleBot:
 
 
 def create_tools():
-    path = environ.get(BOT_CONFIGS_ENV)
-    if not path:
-        raise Exception("The '{}' environment variable should "
-                        "be declared.".format(BOT_CONFIGS_ENV))
     parser = ArgumentParser()
     parser.add_argument("-b", "--bot", help="The name of bot that will be run",
                         default='')
+    parser.add_argument("-d", "--config-dir-path", help="The config dir path")
     args = parser.parse_args()
     if not args.bot:
         raise Exception("The bot name shouldn't be empty.")
-    full_bot_path = join(path, args.bot) + ".ini"
+    full_bot_path = join(args.config_dir_path, args.bot) + ".ini"
     config = ConfigParser()
     try:
         config.read(full_bot_path)
