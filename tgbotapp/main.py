@@ -29,26 +29,20 @@ class CustomTeleBot:
 
 def create_tools():
     parser = ArgumentParser()
-    parser.add_argument("-b", "--bot", default="",
+    parser.add_argument("-b", "--bot", required=True,
                         help="The name of bot that will be run")
     parser.add_argument("-d", "--config-dir-path", help="The config dir path")
-    parser.add_argument("-l", "--logging", default="",
+    parser.add_argument("-l", "--logging-path", required=True,
                         help="The name of logging configuration file")
     args = parser.parse_args()
-    if not args.bot:
-        raise Exception("The bot name shouldn't be empty.")
-    if not args.logging:
-        raise Exception("The logging config name shouldn't be empty.")
-    full_log_path = join(args.config_dir_path, args.logging) + ".ini"
-    logging.config.fileConfig(full_log_path)
-    log = logging.getLogger("tgbot")
+    logging.config.fileConfig(args.logging_path)
     full_bot_path = join(args.config_dir_path, args.bot) + ".ini"
     config = ConfigParser()
     try:
         config.read(full_bot_path)
-        token = config.get('main', 'token')
-        handler_name = config.get('main', 'handler')
-        handler_settings = config.items('handler')
+        token = config.get("main", "token")
+        handler_name = config.get('main', "handler")
+        handler_settings = config.items("handler")
         handler_settings = dict(handler_settings)
     except Exception as exc:
         raise exc
@@ -58,7 +52,7 @@ def create_tools():
             msghandler.msghandler.MessageHandler(**handler_settings))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     while True:
         try:
