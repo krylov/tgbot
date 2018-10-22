@@ -10,18 +10,25 @@ from time import sleep
 
 
 class CustomTeleBot:
-    def __init__(self, token):
-        self._bot = TeleBot(token)
 
-        @self._bot.message_handler(commands=['start_send', 'stop_send'])
+    def __init__(self, token, handlers):
+        self._bot = TeleBot(token)
+        commands = []
+        for handler in handlers:
+            commands += handlers.commands
+
+        @self._bot.message_handler(commands=commands)
         def execute_command(message):
-            handler.execute_command(self._bot, message)
+            log.info("Execute Command: {}".format(message))
+            for handler in handlers:
+                handler.execute_command(self._bot, message)
 
         @self._bot.message_handler(content_types=['text'])
         def make_response(message):
-            self._bot.send_message(message.chat.id,
-                                   handler.make_response(message),
-                                   parse_mode="html")
+            for handler in handlers:
+                self._bot.send_message(message.chat.id,
+                                       handler.make_response(message),
+                                       parse_mode="html")
 
     def run(self):
         self._bot.polling(none_stop=True)
@@ -37,6 +44,8 @@ def create_tools():
     args = parser.parse_args()
     logging.config.fileConfig(args.logging_path)
     full_bot_path = join(args.config_dir_path, args.bot) + ".ini"
+    global log
+    log = logging.getLogger("tgbotapp.main")
     config = ConfigParser()
     try:
         config.read(full_bot_path)
@@ -47,16 +56,16 @@ def create_tools():
     except Exception as exc:
         raise exc
     msghandler = import_module(handler_name)
+    handler = msghandler.msghandler.MessageHandler(**handler_settings)
 
-    return (CustomTeleBot(token),
-            msghandler.msghandler.MessageHandler(**handler_settings))
+    return CustomTeleBot(token, [handler])
 
 
 if __name__ == "__main__":
 
     while True:
         try:
-            bot, handler = create_tools()
+            bot = create_tools()
             bot.run()
             break
         except (ConnectionError, ReadTimeout) as exc:
