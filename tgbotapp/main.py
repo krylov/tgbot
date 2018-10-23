@@ -5,6 +5,7 @@ import logging
 import logging.config
 from os.path import join
 from requests.exceptions import ConnectionError, ReadTimeout
+import signal
 from telebot import TeleBot
 from time import sleep
 
@@ -15,7 +16,7 @@ class CustomTeleBot:
         self._bot = TeleBot(token)
         commands = []
         for handler in handlers:
-            commands += handlers.commands
+            commands += handler.commands
 
         @self._bot.message_handler(commands=commands)
         def execute_command(message):
@@ -31,7 +32,19 @@ class CustomTeleBot:
                                        parse_mode="html")
 
     def run(self):
+        log.info("Bot started")
         self._bot.polling(none_stop=True)
+
+
+class BotKiller:
+
+    def __init__(self, bot):
+        self._bot = bot
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def exit_gracefully(self, signum, frame):
+        log.info("Bot stopped")
+        self._bot.stop_polling()
 
 
 def create_tools():
@@ -66,6 +79,7 @@ if __name__ == "__main__":
     while True:
         try:
             bot = create_tools()
+            BotKiller(bot)
             bot.run()
             break
         except (ConnectionError, ReadTimeout) as exc:
