@@ -32,19 +32,29 @@ class CustomTeleBot:
                                        parse_mode="html")
 
     def run(self):
-        log.info("Bot started")
+        log.info("Bot will be started")
         self._bot.polling(none_stop=True)
+
+    def stop(self):
+        log.info("Bot will be stopped")
+        self._bot.stop_polling()
+        # self._bot.stop_bot()
 
 
 class BotKiller:
 
     def __init__(self, bot):
         self._bot = bot
+        self._stop_now = False
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def exit_gracefully(self, signum, frame):
-        log.info("Bot stopped")
-        self._bot.stop_polling()
+        self._bot.stop()
+        self._stop_now = True
+
+    @property
+    def stop_now(self):
+        return self._stop_now
 
 
 def create_tools():
@@ -60,28 +70,36 @@ def create_tools():
     global log
     log = logging.getLogger("tgbotapp.main")
     config = ConfigParser()
+    handlers = []
     try:
         config.read(full_bot_path)
         token = config.get("main", "token")
-        handler_name = config.get('main', "handler")
-        handler_settings = config.items("handler")
-        handler_settings = dict(handler_settings)
+        names = config.get("main", "handlers").split(",")
+        for name in names:
+            section = "handler_{}".format(name)
+            handler_settings = config.items(section)
+            handler_settings = dict(handler_settings)
+            unit = import_module(handler_settings.pop("package"))
+            handlers.append(unit.msghandler.MessageHandler(**handler_settings))
     except Exception as exc:
         raise exc
-    msghandler = import_module(handler_name)
-    handler = msghandler.msghandler.MessageHandler(**handler_settings)
+    if not handlers:
+        raise Exception("No sense to run")
 
-    return CustomTeleBot(token, [handler])
+    return CustomTeleBot(token, handlers)
 
 
 if __name__ == "__main__":
-
+    bot = create_tools()
+    killer = BotKiller(bot)
     while True:
         try:
-            bot = create_tools()
-            BotKiller(bot)
             bot.run()
             break
         except (ConnectionError, ReadTimeout) as exc:
-            print("Error: {}".format(exc))
+            if killer.stop_now:
+                log.error("Bot should be stopped")
+                break
+            log.error("Error: {}".format(exc))
             sleep(10)
+    log.info("Program exit")
